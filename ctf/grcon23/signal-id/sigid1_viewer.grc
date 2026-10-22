@@ -33,6 +33,18 @@ options:
     state: enabled
 
 blocks:
+- name: base
+  id: variable
+  parameters:
+    comment: ''
+    value: os.path.expanduser("~/projects/amr-thesis")
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [440, 64.0]
+    rotation: 0
+    state: enabled
 - name: offset
   id: variable_qtgui_range
   parameters:
@@ -89,7 +101,7 @@ blocks:
     alias: ''
     begin_tag: pmt.PMT_NIL
     comment: ''
-    file: /home/grc-gnu/projects/amr-thesis/data/grcon23/signal-id/sigid1.sigmf-data
+    file: base + "/data/grcon23/signal-id/sigid1.sigmf-data"
     length: '0'
     maxoutbuf: '0'
     minoutbuf: '0'
@@ -136,7 +148,7 @@ blocks:
     bits_per_sample3: FORMAT_VORBIS
     bits_per_sample4: FORMAT_PCM_16
     comment: ''
-    file: /home/grc-gnu/projects/amr-thesis/ctf/grcon23/signal-id/sigid1_demod.wav
+    file: base + "/ctf/grcon23/signal-id/sigid1_demod.wav"
     format: FORMAT_WAV
     nchan: '1'
     samp_rate: '48000'
@@ -165,6 +177,19 @@ blocks:
     bus_source: false
     bus_structure: null
     coordinate: [728, 384.0]
+    rotation: 0
+    state: enabled
+- name: import_0
+  id: import
+  parameters:
+    alias: ''
+    comment: ''
+    imports: import os
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [480, 8.0]
     rotation: 0
     state: enabled
 - name: qtgui_freq_sink_x_0
