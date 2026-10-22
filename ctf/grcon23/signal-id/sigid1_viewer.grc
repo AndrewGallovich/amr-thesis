@@ -139,7 +139,7 @@ blocks:
     file: /home/grc-gnu/projects/amr-thesis/ctf/grcon23/signal-id/sigid1_demod.wav
     format: FORMAT_WAV
     nchan: '1'
-    samp_rate: samp_rate
+    samp_rate: '48000'
   states:
     bus_sink: false
     bus_source: false

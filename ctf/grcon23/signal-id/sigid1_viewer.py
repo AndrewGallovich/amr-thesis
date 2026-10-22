@@ -256,7 +256,7 @@ class sigid1_viewer(gr.top_block, Qt.QWidget):
         self.blocks_wavfile_sink_0 = blocks.wavfile_sink(
             '/home/grc-gnu/projects/amr-thesis/ctf/grcon23/signal-id/sigid1_demod.wav',
             1,
-            samp_rate,
+            48000,
             blocks.FORMAT_WAV,
             blocks.FORMAT_PCM_16,
             False
