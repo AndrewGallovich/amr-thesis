@@ -1,0 +1,5 @@
+# Raw IQ recordings (too big for git)
+*.sigmf-data
+*.cf32
+*.iq
+*.bin
