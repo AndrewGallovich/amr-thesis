@@ -1,0 +1,21 @@
+name: thesis
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - gnuradio=3.10
+  - numpy
+  - numpy
+  - libblas=*=*openblas
+  - scipy
+  - matplotlib
+  - h5py
+  - scikit-learn
+  - pytorch
+  - jupyterlab
+  - tqdm
+  - pip
+  # Add SDR drivers later when you know your hardware, e.g.:
+  # - uhd                 # USRP
+  # - gnuradio-osmosdr    # RTL-SDR / HackRF
+  # - soapysdr
