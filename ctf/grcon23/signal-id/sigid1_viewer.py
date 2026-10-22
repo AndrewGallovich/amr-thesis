@@ -254,7 +254,7 @@ class sigid1_viewer(gr.top_block, Qt.QWidget):
         self.top_layout.addWidget(self._qtgui_freq_sink_x_0_win)
         self.freq_xlating_fir_filter_xxx_0 = filter.freq_xlating_fir_filter_ccc(5, firdes.low_pass(1, samp_rate, 7000, 2000), offset, samp_rate)
         self.blocks_wavfile_sink_0 = blocks.wavfile_sink(
-            '/home/grc-gnu/projects/amr-thesis/ctf/grcon23/signal-id/sigid1_demod',
+            '/home/grc-gnu/projects/amr-thesis/ctf/grcon23/signal-id/sigid1_demod.wav',
             1,
             samp_rate,
             blocks.FORMAT_WAV,

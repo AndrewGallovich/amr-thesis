@@ -136,7 +136,7 @@ blocks:
     bits_per_sample3: FORMAT_VORBIS
     bits_per_sample4: FORMAT_PCM_16
     comment: ''
-    file: /home/grc-gnu/projects/amr-thesis/ctf/grcon23/signal-id/sigid1_demod
+    file: /home/grc-gnu/projects/amr-thesis/ctf/grcon23/signal-id/sigid1_demod.wav
     format: FORMAT_WAV
     nchan: '1'
     samp_rate: samp_rate
