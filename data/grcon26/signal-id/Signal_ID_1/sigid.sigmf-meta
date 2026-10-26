@@ -1,0 +1,20 @@
+{
+  "global": {
+    "core:datatype": "cf32_le",
+    "core:sample_rate": 500000.0,
+    "core:version": "1.0.0",
+    "core:description": "GRCon26 CTF challenge 'Signal ID'. Synthetic composite; carrier offsets are relative to the centre of the capture. The stated centre frequency is flavour, not provenance -- these carriers do not coexist on any real band.",
+    "core:author": "GRCon26 CTF",
+    "core:recorder": "fdm_combine.py",
+    "core:num_channels": 1,
+    "core:sha512": "886176f6f40f7054b7b4a569e84de856ce5777feabf9cf1652bd21368abde9a538bf1d1cf4c286afb3c92ef5b1d376be522feebb908e5e3a19b7fb41b7d0cb32",
+    "grcon:noise_seed": 2026
+  },
+  "captures": [
+    {
+      "core:sample_start": 0,
+      "core:frequency": 4625000
+    }
+  ],
+  "annotations": []
+}
