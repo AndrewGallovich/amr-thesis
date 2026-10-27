@@ -216,6 +216,43 @@ blocks:
     coordinate: [1896, 448.0]
     rotation: 0
     state: disabled
+- name: const_rx_rds
+  id: digital_constellation_receiver_cb
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'Step 6: fix rotation, sample -> 0/1'
+    constellation: digital.constellation_bpsk().base()
+    fmax: '0.002'
+    fmin: '-0.002'
+    loop_bw: 2*math.pi/100
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    showports: 'False'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2672, 224.0]
+    rotation: 0
+    state: enabled
+- name: diff_dec_rds
+  id: digital_diff_decoder_bb
+  parameters:
+    affinity: ''
+    alias: ''
+    coding: digital.DIFF_DIFFERENTIAL
+    comment: 'Step 7: undo differential coding'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    modulus: '2'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2960, 224.0]
+    rotation: 0
+    state: enabled
 - name: fir_filter_xxx_0
   id: fir_filter_xxx
   parameters:
@@ -367,6 +404,98 @@ blocks:
     coordinate: [1248, 448.0]
     rotation: 0
     state: disabled
+- name: qtgui_const_sink_rds
+  id: qtgui_const_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    axislabels: 'True'
+    color1: '"blue"'
+    color10: '"dark blue"'
+    color2: '"red"'
+    color3: '"green"'
+    color4: '"black"'
+    color5: '"cyan"'
+    color6: '"magenta"'
+    color7: '"yellow"'
+    color8: '"dark red"'
+    color9: '"dark green"'
+    comment: Each dot = one bit
+    grid: 'False'
+    gui_hint: ''
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    legend: 'True'
+    marker1: '0'
+    marker10: '0'
+    marker2: '0'
+    marker3: '0'
+    marker4: '0'
+    marker5: '0'
+    marker6: '0'
+    marker7: '0'
+    marker8: '0'
+    marker9: '0'
+    name: '"RDS bits"'
+    nconnections: '1'
+    size: '1024'
+    style1: '0'
+    style10: '0'
+    style2: '0'
+    style3: '0'
+    style4: '0'
+    style5: '0'
+    style6: '0'
+    style7: '0'
+    style8: '0'
+    style9: '0'
+    tr_chan: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: complex
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    xmax: '2'
+    xmin: '-2'
+    ymax: '2'
+    ymin: '-2'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2672, 64.0]
+    rotation: 0
+    state: enabled
 - name: qtgui_freq_sink_x_0
   id: qtgui_freq_sink_x
   parameters:
@@ -623,7 +752,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2008, 104.0]
+    coordinate: [2336, 56.0]
     rotation: 0
     state: enabled
 - name: qtgui_waterfall_sink_x_0
@@ -723,6 +852,58 @@ blocks:
     coordinate: [1568, 96.0]
     rotation: 0
     state: enabled
+- name: rds_text
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nRDS text decoder (replaces gr-rds RDS Decoder + RDS Parser).\n\
+      \nInput: one bit per byte (0 or 1), straight from the Differential Decoder.\n\
+      Prints the station name (PS) and RadioText (RT) to the console whenever they\
+      \ change.\n\nHow it works:\n  RDS sends data in \"groups\" of 4 blocks (A, B,\
+      \ C, D), 26 bits each = 104 bits.\n  Each block = 16 data bits + 10 check bits.\
+      \ The check bits are mixed with a\n  known \"offset word\" that is different\
+      \ for A, B, C and D. So by checking the\n  last 104 bits, we can tell when a\
+      \ full group has just arrived.\n  Block B says what kind of group it is:\n \
+      \   type 0A -> 2 characters of the station name (PS, 8 chars total)\n    type\
+      \ 2A -> 4 characters of RadioText (RT, up to 64 chars)\n\"\"\"\nimport numpy\
+      \ as np\nfrom gnuradio import gr\n\nPOLY = 0x5B9                           \
+      \   # RDS check polynomial (x^10+x^8+x^7+x^5+x^4+x^3+1)\nOFFSETS = {0x0FC: 'A',\
+      \ 0x198: 'B', 0x168: 'C', 0x350: 'C', 0x1B4: 'D'}\n\n\ndef syndrome(word26):\n\
+      \    \"\"\"Remainder of a 26-bit block divided by the RDS polynomial.\"\"\"\n\
+      \    r = word26\n    for i in range(25, 9, -1):\n        if r >> i & 1:\n  \
+      \          r ^= POLY << (i - 10)\n    return r\n\n\nclass blk(gr.sync_block):\n\
+      \    def __init__(self):\n        gr.sync_block.__init__(self, name='RDS text\
+      \ decoder', in_sig=[np.uint8], out_sig=None)\n        self.window = 0      \
+      \             # last 104 bits, newest bit at the right\n        self.nbits =\
+      \ 0\n        self.ps = [' '] * 8\n        self.rt = [' '] * 64\n        self.last_print\
+      \ = ''\n\n    def work(self, input_items, output_items):\n        for b in input_items[0]:\n\
+      \            self.window = ((self.window << 1) | int(b & 1)) & ((1 << 104) -\
+      \ 1)\n            self.nbits += 1\n            if self.nbits >= 104:\n     \
+      \           self.check_group()\n        return len(input_items[0])\n\n    def\
+      \ check_group(self):\n        blocks = [(self.window >> (26 * (3 - k))) & 0x3FFFFFF\
+      \ for k in range(4)]\n        names = [OFFSETS.get(syndrome(w)) for w in blocks]\n\
+      \        if names != ['A', 'B', 'C', 'D']:\n            return\n        a, b,\
+      \ c, d = [w >> 10 for w in blocks]   # keep the 16 data bits\n        group_type,\
+      \ version = b >> 12, (b >> 11) & 1\n        if group_type == 0:            \
+      \           # station name\n            i = b & 3\n            self.ps[2 * i:2\
+      \ * i + 2] = [chr(d >> 8), chr(d & 0xFF)]\n        elif group_type == 2 and\
+      \ version == 0:    # RadioText\n            i = b & 15\n            self.rt[4\
+      \ * i:4 * i + 4] = [chr(c >> 8), chr(c & 0xFF), chr(d >> 8), chr(d & 0xFF)]\n\
+      \        text = 'PS: [%s]   RT: [%s]' % (''.join(self.ps), ''.join(self.rt).split('\\\
+      r')[0].rstrip())\n        if text != self.last_print:\n            print(text,\
+      \ flush=True)\n            self.last_print = text\n"
+    affinity: ''
+    alias: ''
+    comment: 'Step 8: bits -> text (prints to console)'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    _io_cache: ('RDS text decoder', 'blk', [], [('0', 'byte', 1)], [], '', [])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [3184, 240.0]
+    rotation: 0
+    state: enabled
 - name: sub_right
   id: blocks_sub_xx
   parameters:
@@ -741,6 +922,33 @@ blocks:
     coordinate: [1696, 448.0]
     rotation: 0
     state: disabled
+- name: symbol_sync_rds
+  id: digital_symbol_sync_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'Step 5: one sample per bit'
+    constellation: digital.constellation_bpsk().base()
+    damping: '1.0'
+    loop_bw: '0.01'
+    max_dev: '1.5'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    nfilters: '128'
+    osps: '1'
+    pfb_mf_taps: '[]'
+    resamp_type: digital.IR_MMSE_8TAP
+    sps: '16'
+    ted_gain: '1.0'
+    ted_type: digital.TED_GARDNER
+    type: cc
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2296, 204.0]
+    rotation: 0
+    state: enabled
 - name: tone_38k
   id: analog_sig_source_x
   parameters:
@@ -771,7 +979,10 @@ connections:
 - [blocks_throttle2_0, '0', freq_xlating_fir_filter_xxx_0, '0']
 - [blocks_throttle2_0, '0', qtgui_freq_sink_x_0, '0']
 - [blocks_throttle2_0, '0', qtgui_waterfall_sink_x_0, '0']
+- [const_rx_rds, '0', diff_dec_rds, '0']
+- [diff_dec_rds, '0', rds_text, '0']
 - [fir_filter_xxx_0, '0', qtgui_time_sink_x_0, '0']
+- [fir_filter_xxx_0, '0', symbol_sync_rds, '0']
 - [freq_xlating_fir_filter_xxx_0, '0', qtgui_freq_sink_x_1, '0']
 - [freq_xlating_fir_filter_xxx_0, '0', quad_demod, '0']
 - [freq_xlating_fir_filter_xxx_1, '0', rational_resampler_xxx_0, '0']
@@ -785,6 +996,8 @@ connections:
 - [quad_demod, '0', mix_38k, '0']
 - [rational_resampler_xxx_0, '0', fir_filter_xxx_0, '0']
 - [sub_right, '0', blocks_wavfile_sink_1, '0']
+- [symbol_sync_rds, '0', const_rx_rds, '0']
+- [symbol_sync_rds, '0', qtgui_const_sink_rds, '0']
 - [tone_38k, '0', mix_38k, '1']
 
 metadata:

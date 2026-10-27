@@ -15,6 +15,7 @@ from gnuradio import analog
 import math
 from gnuradio import blocks
 import pmt
+from gnuradio import digital
 from gnuradio import filter
 from gnuradio.filter import firdes
 from gnuradio import gr
@@ -25,6 +26,7 @@ from PyQt5 import Qt
 from argparse import ArgumentParser
 from gnuradio.eng_arg import eng_float, intx
 from gnuradio import eng_notation
+import SigID1_rds_text as rds_text  # embedded python block
 import os
 import sip
 import threading
@@ -83,6 +85,19 @@ class SigID1(gr.top_block, Qt.QWidget):
         self._bw_range = qtgui.Range(1000, 200000, 1000, 180000, 200)
         self._bw_win = qtgui.RangeWidget(self._bw_range, self.set_bw, "'bw'", "counter_slider", float, QtCore.Qt.Horizontal)
         self.top_layout.addWidget(self._bw_win)
+        self.symbol_sync_rds = digital.symbol_sync_cc(
+            digital.TED_GARDNER,
+            16,
+            0.01,
+            1.0,
+            1.0,
+            1.5,
+            1,
+            digital.constellation_bpsk().base(),
+            digital.IR_MMSE_8TAP,
+            128,
+            [])
+        self.rds_text = rds_text.blk()
         self.rational_resampler_xxx_0 = filter.rational_resampler_ccc(
                 interpolation=19,
                 decimation=250,
@@ -259,10 +274,53 @@ class SigID1(gr.top_block, Qt.QWidget):
 
         self._qtgui_freq_sink_x_0_win = sip.wrapinstance(self.qtgui_freq_sink_x_0.qwidget(), Qt.QWidget)
         self.top_layout.addWidget(self._qtgui_freq_sink_x_0_win)
+        self.qtgui_const_sink_rds = qtgui.const_sink_c(
+            1024, #size
+            "RDS bits", #name
+            1, #number of inputs
+            None # parent
+        )
+        self.qtgui_const_sink_rds.set_update_time(0.10)
+        self.qtgui_const_sink_rds.set_y_axis((-2), 2)
+        self.qtgui_const_sink_rds.set_x_axis((-2), 2)
+        self.qtgui_const_sink_rds.set_trigger_mode(qtgui.TRIG_MODE_FREE, qtgui.TRIG_SLOPE_POS, 0.0, 0, "")
+        self.qtgui_const_sink_rds.enable_autoscale(False)
+        self.qtgui_const_sink_rds.enable_grid(False)
+        self.qtgui_const_sink_rds.enable_axis_labels(True)
+
+
+        labels = ['', '', '', '', '',
+            '', '', '', '', '']
+        widths = [1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1]
+        colors = ["blue", "red", "green", "black", "cyan",
+            "magenta", "yellow", "dark red", "dark green", "dark blue"]
+        styles = [0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0]
+        markers = [0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0]
+        alphas = [1.0, 1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0, 1.0]
+
+        for i in range(1):
+            if len(labels[i]) == 0:
+                self.qtgui_const_sink_rds.set_line_label(i, "Data {0}".format(i))
+            else:
+                self.qtgui_const_sink_rds.set_line_label(i, labels[i])
+            self.qtgui_const_sink_rds.set_line_width(i, widths[i])
+            self.qtgui_const_sink_rds.set_line_color(i, colors[i])
+            self.qtgui_const_sink_rds.set_line_style(i, styles[i])
+            self.qtgui_const_sink_rds.set_line_marker(i, markers[i])
+            self.qtgui_const_sink_rds.set_line_alpha(i, alphas[i])
+
+        self._qtgui_const_sink_rds_win = sip.wrapinstance(self.qtgui_const_sink_rds.qwidget(), Qt.QWidget)
+        self.top_layout.addWidget(self._qtgui_const_sink_rds_win)
         self.freq_xlating_fir_filter_xxx_1 = filter.freq_xlating_fir_filter_fcf(1, firdes.low_pass(1, samp_rate/decim, 2400, 600), 57000, 250000)
         self.freq_xlating_fir_filter_xxx_0 = filter.freq_xlating_fir_filter_ccc(decim, firdes.low_pass(1, samp_rate, bw/2, bw/10), offset, samp_rate)
         self.fir_filter_xxx_0 = filter.fir_filter_ccc(1, [1]*8 + [-1]*8)
         self.fir_filter_xxx_0.declare_sample_delay(0)
+        self.diff_dec_rds = digital.diff_decoder_bb(2, digital.DIFF_DIFFERENTIAL)
+        self.const_rx_rds = digital.constellation_receiver_cb(digital.constellation_bpsk().base(), (2*math.pi/100), (-0.002), 0.002)
         self.blocks_throttle2_0 = blocks.throttle( gr.sizeof_gr_complex*1, samp_rate, True, 0 if "auto" == "auto" else max( int(float(0.1) * samp_rate) if "auto" == "time" else int(0.1), 1) )
         self.blocks_file_source_0 = blocks.file_source(gr.sizeof_gr_complex*1, '/home/grc-gnu/projects/amr-thesis/data/grcon26/signal-id/Signal_ID_1/sigid.sigmf-data', False, 0, 0)
         self.blocks_file_source_0.set_begin_tag(pmt.PMT_NIL)
@@ -275,12 +333,17 @@ class SigID1(gr.top_block, Qt.QWidget):
         self.connect((self.blocks_throttle2_0, 0), (self.freq_xlating_fir_filter_xxx_0, 0))
         self.connect((self.blocks_throttle2_0, 0), (self.qtgui_freq_sink_x_0, 0))
         self.connect((self.blocks_throttle2_0, 0), (self.qtgui_waterfall_sink_x_0, 0))
+        self.connect((self.const_rx_rds, 0), (self.diff_dec_rds, 0))
+        self.connect((self.diff_dec_rds, 0), (self.rds_text, 0))
         self.connect((self.fir_filter_xxx_0, 0), (self.qtgui_time_sink_x_0, 0))
+        self.connect((self.fir_filter_xxx_0, 0), (self.symbol_sync_rds, 0))
         self.connect((self.freq_xlating_fir_filter_xxx_0, 0), (self.qtgui_freq_sink_x_1, 0))
         self.connect((self.freq_xlating_fir_filter_xxx_0, 0), (self.quad_demod, 0))
         self.connect((self.freq_xlating_fir_filter_xxx_1, 0), (self.rational_resampler_xxx_0, 0))
         self.connect((self.quad_demod, 0), (self.freq_xlating_fir_filter_xxx_1, 0))
         self.connect((self.rational_resampler_xxx_0, 0), (self.fir_filter_xxx_0, 0))
+        self.connect((self.symbol_sync_rds, 0), (self.const_rx_rds, 0))
+        self.connect((self.symbol_sync_rds, 0), (self.qtgui_const_sink_rds, 0))
 
 
     def closeEvent(self, event):
