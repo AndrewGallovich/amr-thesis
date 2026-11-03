@@ -3,3 +3,7 @@
 *.cf32
 *.iq
 *.bin
+
+# Python caches
+__pycache__/
+*.pyc

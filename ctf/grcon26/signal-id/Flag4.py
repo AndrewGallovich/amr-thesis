@@ -31,7 +31,7 @@ import threading
 
 
 
-class default(gr.top_block, Qt.QWidget):
+class Flag4(gr.top_block, Qt.QWidget):
 
     def __init__(self):
         gr.top_block.__init__(self, "Not titled yet", catch_exceptions=True)
@@ -54,7 +54,7 @@ class default(gr.top_block, Qt.QWidget):
         self.top_grid_layout = Qt.QGridLayout()
         self.top_layout.addLayout(self.top_grid_layout)
 
-        self.settings = Qt.QSettings("gnuradio/flowgraphs", "default")
+        self.settings = Qt.QSettings("gnuradio/flowgraphs", "Flag4")
 
         try:
             geometry = self.settings.value("geometry")
@@ -193,7 +193,7 @@ class default(gr.top_block, Qt.QWidget):
 
 
     def closeEvent(self, event):
-        self.settings = Qt.QSettings("gnuradio/flowgraphs", "default")
+        self.settings = Qt.QSettings("gnuradio/flowgraphs", "Flag4")
         self.settings.setValue("geometry", self.saveGeometry())
         self.stop()
         self.wait()
@@ -238,7 +238,7 @@ class default(gr.top_block, Qt.QWidget):
 
 
 
-def main(top_block_cls=default, options=None):
+def main(top_block_cls=Flag4, options=None):
 
     qapp = Qt.QApplication(sys.argv)
 
