@@ -6,7 +6,7 @@
 - It's a **synthetic mix**: lots of different signals side by side, like a radio dial with many stations playing at once.
 - The center frequency in the metadata (4.625 MHz) is just decoration. Identify each signal from what it looks like, not from what band it's on.
 - **11 carriers, 14 flags**, so some carriers hold more than one flag.
-- **Theme: famous mystery radio stations.** UVB-76 ("The Buzzer") really broadcasts on 4625 kHz, hence the metadata. MDZHB is the Buzzer's later call sign. Other flags so far: DUGA (Soviet "Russian Woodpecker" radar), The Pip, the Lincolnshire Poacher, Sky King (US military shortwave broadcasts that start "Skyking, Skyking, do not answer"). If a flag is half-heard, guess from the theme.
+- **Theme: famous mystery radio stations.** UVB-76 ("The Buzzer") really broadcasts on 4625 kHz, hence the metadata. MDZHB is the Buzzer's later call sign. Other flags so far: DUGA (Soviet "Russian Woodpecker" radar), The Pip, the Lincolnshire Poacher, Sky King (US military shortwave broadcasts that start "Skyking, Skyking, do not answer"), Woodpecker (the nickname for the DUGA radar's tapping sound), Swedish Rhapsody (a Polish numbers station named after the music-box tune it played). If a flag is half-heard, guess from the theme.
 
 ### How to submit (this tripped me up)
 
@@ -25,8 +25,11 @@
 | 6 | −140 kHz FM stereo | Voice, one stereo channel | `flag6{MDZHB}` | ✅ |
 | 7 | −140 kHz FM stereo | Voice, other stereo channel, NATO phonetic | `flag7{DUGA}` | ✅ |
 | 8 | −140 kHz FM stereo | RDS RadioText | `flag8{THE_PIP}` | ✅ |
+| 9 | +80 kHz FM + 1200/2200 Hz tones | Packet radio (AFSK 1200), decoded by Python block | `flag9{WOODPECKER}` | ✅ |
+| 10 | +110 kHz two-frequency FSK | Pager (POCSAG), decoded by Python block | `flag10{SWEDISH_RHAPSODY}` | ✅ |
+| 11 | +140 kHz two-frequency FSK, 1600 bits/s | Pager (FLEX), decoded by Python block | `flag11{YOSEMITE_SAM}` | ✅ |
 
-**5 of 11 carriers done, 7 of 14 flags.** Left: flags 5, 9–14.
+**8 of 11 carriers done, 10 of 14 flags.** Left: flags 5, 12–14 (carriers at about +170, +200, +225 kHz).
 
 Flag 2 was heard as "P_ACHER"; the missing letter is O (Lincolnshire Poacher, a British numbers station).
 
@@ -111,6 +114,124 @@ Xlating (center 50000, bw 10000, decim 50 → 10 kHz)
 
 - Center Frequency is typed in as `50000` instead of `offset`, and the WAV path is hard-coded to `~/Downloads/New.wav`. Switch both to `offset` / `base` so it works on both machines.
 - The hints say another NBFM slot holds the **telephone pulse dial**, so this same chain should work there too.
+
+## Carrier: +80 kHz = packet radio (flag 9)
+
+### How I knew
+
+1. **Zoomed waterfall:** a steady line at 0 plus faint dashed lines at ±1.1 and ±2.2 kHz, evenly spaced, mirror images, blinking together → **one signal**, a carrier with something switched on and off on top.
+2. **AM or FM?** Ran both detectors side by side:
+   - Complex to Mag (loudness): flat ~0.05 with tiny random jitter → nothing there.
+   - Quadrature Demod (pitch): big regular wave, −2 to +2 → **FM**.
+   - **Read the numbers on the axis, not the shape.** Autoscale makes noise look as busy as a real signal.
+3. **Listening:** "tones, then static." The static is just the gaps between messages.
+4. **Inside each burst:** two pitches, **~1200 Hz and ~2200 Hz**, switching at **1200 times per second** (0.83 ms per bit). That's the **Bell 202** standard = **packet radio** (APRS), sending bits as two audio tones (AFSK).
+
+So it's **FM carrying a two-tone modem signal**. Bursts last ~0.5 s and repeat every ~1.3 s, all with the same message.
+
+### Chain
+
+```
+Xlating (offset 80000, bw 8000, decim 50 → 10 kHz)
+  → Quadrature Demod (gain 1)                          ← FM → audio tones
+  → Xlating (Float→Complex, center 1700, decim 1,
+             taps firdes.low_pass(1, samp_rate/decim, 1200, 300))
+  → Quadrature Demod (gain 1)                          ← tones → high/low
+  → Rational Resampler (interp 6, decim 5 → 12 kHz)    ← exactly 10 samples per bit
+  → Symbol Sync (Float, Gardner, SPS 10, loop BW 0.01, output SPS 1)
+  → Binary Slicer                                      ← high = 1, low = 0
+  → Embedded Python Block "Packet radio decoder"
+```
+
+- The **second Quadrature Demod** is the trick: measuring pitch again turns low beep / high beep into two levels (±0.33), a clean staircase.
+- Centering it at **1700 Hz** = halfway between the two tones.
+- Time Sink can't show bytes: put **Char To Float** between the Binary Slicer and the Time Sink.
+
+### How the Python block decodes it
+
+1. **NRZI:** the bit isn't the level, it's whether the beep **changed**. Changed = 0, stayed = 1. (Same idea as RDS's Differential Decoder.)
+2. **HDLC framing:** each message starts and ends with the marker `01111110`. The sender inserts a filler 0 after five 1s in a row so data never looks like the marker; the block removes those.
+3. **Bytes + error check:** every 8 bits = 1 byte (least significant bit first). The last 2 bytes are a CRC-16 error check; only messages that pass are printed.
+4. **AX.25 addresses:** receiver (7 bytes), sender (7 bytes), each letter shifted left by 1 bit. Then 2 control bytes, then the text.
+
+Output: `NUMBRS > APZ001: >flag9{WOODPECKER}`
+
+## Carrier: +110 kHz = pager, POCSAG (flag 10)
+
+### How I knew
+
+1. **Wider than the others** (~10 kHz in the big waterfall, a zigzag). Needed `decim = 25` (view ±10 kHz) and `bw = 15000`.
+   - **Lesson:** `bw` must fit inside the view. With `decim = 50` (±5 kHz) and `bw = 15000`, the extra wrapped around and smeared everything (aliasing).
+   - Also had to switch the taps back from the sideband filter to `firdes.low_pass(...)` again.
+2. **Zoomed waterfall:** two bands at about **±4.5 kHz**, nothing in the middle, coming in bursts.
+3. **Quadrature Demod → Time Sink:**
+   - At 10 ms: a smooth **600 Hz** wave = alternating bits 1010… (the pager "wake-up" pattern). One bit = 0.83 ms → **1200 bits/s**.
+   - At 500 ms: flat at **+1.7 or −1.7**, jumping between them = **two-frequency FSK** (bits sent by jumping between two radio frequencies, no audio step).
+4. ±4.5 kHz shift + 1200 bits/s + long 1010 wake-up = **POCSAG**, the standard pager format.
+
+- Not the pulse dial (Hint 5): a rotary dial clicks only ~10 times per second with pauses between digits. This switched dozens of times per 100 ms.
+
+### Chain
+
+```
+Xlating (offset 110000, bw 15000, decim 25 → 20 kHz)
+  → Quadrature Demod (gain 1)                          ← the two frequencies → two levels
+  → Rational Resampler (interp 3, decim 5 → 12 kHz)    ← exactly 10 samples per bit
+  → Symbol Sync (Float, Gardner, SPS 10, loop BW 0.01, output SPS 1)
+  → Binary Slicer
+  → Embedded Python Block "Pager (POCSAG) decoder"
+```
+
+Same as flag 9 but **without** the audio step (one Quadrature Demod, not two).
+
+### How the Python block decodes it
+
+1. **Find the marker** `0x7CD215D8` ("a batch starts here"). Also checks the flipped version, in case 0s and 1s are upside down.
+2. **Read 16 words of 32 bits**, then expect the marker again.
+3. **First bit of each word:** 0 = **address** (which pager), 1 = **20 bits of message**. `0x7A89C197` = filler ("nothing to send").
+4. **Text:** letters are 7 bits each (least significant bit first), digits 4 bits each. The block prints both; only one makes sense.
+
+Plain bits, no "did it change?" rule (unlike packet radio and RDS).
+
+Output: `flag10{SWEDISH_RHAPSODY}`
+
+## Carrier: +140 kHz = pager, FLEX (flag 11)
+
+### How I knew (and the wrong turn)
+
+1. **Widest one yet** (~135–147 kHz). Needed `decim = 20` (view ±12.5 kHz) with `bw = 20000`.
+2. **Zoomed waterfall:** two strong lines at **±4.9 kHz**, empty middle, "ladder rungs" between them in the big waterfall → two-frequency FSK again.
+3. **Quadrature Demod → Time Sink (400 ms):** clean two levels with steps that looked like **5 ms** → I guessed **200 bits/s**. **This was wrong.**
+4. At 200 bits/s the bits had a repeating 13-bit pattern but matched no format (serial text, change-encoding, digit codes, Manchester…).
+5. **Different approach:** recorded the Quadrature Demod output to a WAV and looked at it **zoomed in to 0.1 ms**. The message parts flip every **0.625 ms** → **1600 bits/s**. At 200 we were reading only 1 bit in 8.
+6. 1600 bits/s + ±4.8 kHz + everything repeating every **1.875 s** = **FLEX**, the newer paging system. Its frame marker turned up exactly once per 1.875 s.
+
+**Lessons:**
+- **A Time Sink zoomed out can hide fast data.** Long flat steps were real, but the fast parts in between were too squashed to see. Measure the *shortest* step at a zoom where you can see individual samples.
+- When bits make no sense in any format, **suspect the bit rate before the format**.
+
+### Chain
+
+```
+Xlating (offset 140000, bw 20000, decim 20 → 25 kHz)
+  → Quadrature Demod (gain 1)
+  → Rational Resampler (interp 16, decim 25 → 16 kHz)   ← exactly 10 samples per bit at 1600
+  → Symbol Sync (Float, Gardner, SPS 10, loop BW 0.01, output SPS 1)
+  → Binary Slicer
+  → Embedded Python Block "FLEX pager decoder"
+```
+
+### How the Python block decodes it
+
+1. **Marker** in the middle of the frame header (`0xA6C6AAAA`, or flipped). Then skip 16 filler bits + the 32-bit frame info word + 40 more filler bits.
+2. **Un-shuffle ("interleaving"):** each 256-bit block holds 8 words of 32 bits, sent **one bit from each word in turn**, so a burst of noise only damages one bit per word. 11 blocks = 88 words.
+3. Each word = 21 data bits + 10 check bits (BCH error check) + 1 parity bit. All 88 words passed the check.
+4. **Table of contents:** word 0 says where the **address** (which pager) and the **vector** (what kind of message, where, how long) are. In this frame: address in word 1, vector in word 2, message in words 3–11. Pager number 1234567, type 5 = letters.
+5. **Letters:** 3 per word, 7 bits each.
+
+- Quirk: in this file the data bits use the **opposite** 0/1 sense to the marker.
+
+Output: `flag11{YOSEMITE_SAM}`
 
 ## Carrier: −20 kHz = Morse code (flag 1)
 
@@ -277,6 +398,12 @@ Rules an automatic classifier could use:
 - Double hump at 57 kHz → RDS (BPSK) data.
 - Solid vs. dashed in the waterfall → continuous vs. bursty: an easy first feature.
 - RDS showed the "detect → demodulate → look again" loop: a BPSK signal hidden *inside* an FM signal.
+- Steady carrier + symmetric sidebands at a tone spacing → something switched on top. Try both AM and FM detectors; the one with a regular pattern (not random jitter) wins.
+- FM audio with two tones at 1200/2200 Hz, 1200 bits/s → packet radio (AFSK). Another "demodulate, then look again" case.
+- Two bands mirrored around an empty middle + Quadrature Demod jumping between two flat levels → two-frequency FSK. ±4.5 kHz at 1200 bits/s with a 1010 wake-up → POCSAG pager.
+- Short vs. long views tell different stories: 10 ms showed a smooth wave, 500 ms showed two levels. A classifier should look at more than one time scale.
+- Two-frequency FSK at ±4.8 kHz: 1200 bits/s with a 1010 wake-up → POCSAG; 1600 bits/s with 1.875 s frames → FLEX. **Symbol rate** and **frame timing** are the features that separate them, not the spectrum.
+- Estimate the bit rate from the **shortest** run at fine zoom (or from the spectrum of the demodulated signal), never from a zoomed-out picture.
 - Dashed line + flat on/off blocks in the strength + two "on" lengths at 1 : 3 → on/off keying, Morse.
 - ~2.4 kHz wide, energy on one side only, sharp edge at ±0.3 kHz → SSB voice. Energy right of the edge → USB; energy left of the edge → LSB.
 - Spikes ~10 ms apart in the strength → speech.
