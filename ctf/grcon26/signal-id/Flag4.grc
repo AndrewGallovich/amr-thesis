@@ -134,7 +134,7 @@ blocks:
     alias: ''
     begin_tag: pmt.PMT_NIL
     comment: ''
-    file: /home/grc-gnu/projects/amr-thesis/data/grcon26/signal-id/Signal_ID_1/sigid.sigmf-data
+    file: os.path.join(base, "data/grcon26/signal-id/Signal_ID_1/sigid.sigmf-data")
     length: '0'
     maxoutbuf: '0'
     minoutbuf: '0'
@@ -181,7 +181,7 @@ blocks:
     bits_per_sample3: FORMAT_VORBIS
     bits_per_sample4: FORMAT_PCM_16
     comment: ''
-    file: /home/grc-gnu/Downloads/New.wav
+    file: /home/andrew/Downloads/newflag.wav
     format: FORMAT_WAV
     nchan: '1'
     samp_rate: '8000'

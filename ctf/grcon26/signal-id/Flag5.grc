@@ -1,0 +1,293 @@
+options:
+  parameters: {author: '', catch_exceptions: 'True', category: '[GRC Hier Blocks]', cmake_opt: '', comment: '', copyright: '', description: '', gen_cmake: 'On', gen_linking: dynamic, generate_options: qt_gui, hier_block_src_path: '.:', id: Flag5, max_nouts: '0', output_language: python, placement: '(0,0)', qt_qss_theme: '', realtime_scheduling: '', run: 'True', run_command: '{python} -u {filename}', run_options: prompt, sizing_mode: fixed, thread_safe_setters: '', title: Flag 5 - touch tones after the Sky King voice, window_size: '(1000,1000)'}
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8]
+    rotation: 0
+    state: enabled
+blocks:
+- name: base
+  id: variable
+  parameters: {comment: '', value: os.path.expanduser("~/projects/amr-thesis")}
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [832, 48.0]
+    rotation: 0
+    state: enabled
+- name: bw
+  id: variable_qtgui_range
+  parameters: {comment: '', gui_hint: '', label: '', min_len: '200', orient: QtCore.Qt.Horizontal, rangeType: float, start: '1000', step: '1000', stop: '200000', value: '12000', widget: counter_slider}
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [472, 16.0]
+    rotation: 0
+    state: enabled
+- name: decim
+  id: variable
+  parameters: {comment: '', value: '20'}
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [616, 40.0]
+    rotation: 0
+    state: enabled
+- name: offset
+  id: variable_qtgui_range
+  parameters: {comment: '', gui_hint: '', label: '', min_len: '200', orient: QtCore.Qt.Horizontal, rangeType: float, start: '-250000', step: '100', stop: '250000', value: '50000', widget: counter_slider}
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [320, 16.0]
+    rotation: 0
+    state: enabled
+- name: samp_rate
+  id: variable
+  parameters: {comment: '', value: '500000'}
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [200, 16.0]
+    rotation: 0
+    state: enabled
+- name: analog_quadrature_demod_cf_0
+  id: analog_quadrature_demod_cf
+  parameters: {affinity: '', alias: '', comment: '', gain: '1', maxoutbuf: '0', minoutbuf: '0'}
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1064, 288.0]
+    rotation: 0
+    state: enabled
+- name: blocks_file_source_0
+  id: blocks_file_source
+  parameters: {affinity: '', alias: '', begin_tag: pmt.PMT_NIL, comment: '', file: 'os.path.join(base, "data/grcon26/signal-id/Signal_ID_1/sigid.sigmf-data")', length: '0', maxoutbuf: '0', minoutbuf: '0', offset: '0', repeat: 'False', type: complex, vlen: '1'}
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [184, 248.0]
+    rotation: 0
+    state: enabled
+- name: blocks_throttle2_0
+  id: blocks_throttle2
+  parameters: {affinity: '', alias: '', comment: '', ignoretag: 'True', limit: auto, maximum: '0.1', maxoutbuf: '0', minoutbuf: '0', samples_per_second: samp_rate, type: complex, vlen: '1'}
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [472, 272.0]
+    rotation: 0
+    state: enabled
+- name: freq_xlating_fir_filter_xxx_0
+  id: freq_xlating_fir_filter_xxx
+  parameters: {affinity: '', alias: '', center_freq: offset, comment: '', decim: decim, maxoutbuf: '0', minoutbuf: '0', samp_rate: samp_rate, taps: 'firdes.low_pass(1, samp_rate, bw/2, bw/10)', type: ccc}
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [744, 264.0]
+    rotation: 0
+    state: enabled
+- name: import_0
+  id: import
+  parameters: {alias: '', comment: '', imports: import math}
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [712, 48.0]
+    rotation: 0
+    state: enabled
+- name: import_1
+  id: import
+  parameters: {alias: '', comment: '', imports: import os}
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [720, 112.0]
+    rotation: 0
+    state: enabled
+- name: qtgui_freq_sink_x_0
+  id: qtgui_freq_sink_x
+  parameters: {affinity: '', alias: '', alpha1: '1.0', alpha10: '1.0', alpha2: '1.0', alpha3: '1.0', alpha4: '1.0', alpha5: '1.0', alpha6: '1.0', alpha7: '1.0', alpha8: '1.0', alpha9: '1.0', autoscale: 'False', average: '0.1', axislabels: 'True', bw: samp_rate, color1: '"blue"', color10: '"dark blue"', color2: '"red"', color3: '"green"', color4: '"black"', color5: '"cyan"', color6: '"magenta"', color7: '"yellow"', color8: '"dark red"', color9: '"dark green"', comment: '', ctrlpanel: 'True', fc: '0', fftsize: '1024', freqhalf: 'True', grid: 'False', gui_hint: '', label: Relative Gain, label1: '', label10: '''''', label2: '''''', label3: '''''', label4: '''''', label5: '''''', label6: '''''', label7: '''''', label8: '''''', label9: '''''', legend: 'True', maxoutbuf: '0', minoutbuf: '0', name: '""', nconnections: '1', norm_window: 'False', showports: 'False', tr_chan: '0', tr_level: '0.0', tr_mode: qtgui.TRIG_MODE_FREE, tr_tag: '""', type: complex, units: dB, update_time: '0.10', width1: '1',
+    width10: '1', width2: '1', width3: '1', width4: '1', width5: '1', width6: '1', width7: '1', width8: '1', width9: '1', wintype: window.WIN_BLACKMAN_hARRIS, ymax: '10', ymin: '-140'}
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [744, 400.0]
+    rotation: 0
+    state: enabled
+- name: qtgui_waterfall_sink_x_0
+  id: qtgui_waterfall_sink_x
+  parameters: {affinity: '', alias: '', alpha1: '1.0', alpha10: '1.0', alpha2: '1.0', alpha3: '1.0', alpha4: '1.0', alpha5: '1.0', alpha6: '1.0', alpha7: '1.0', alpha8: '1.0', alpha9: '1.0', axislabels: 'True', bw: samp_rate, color1: '0', color10: '0', color2: '0', color3: '0', color4: '0', color5: '0', color6: '0', color7: '0', color8: '0', color9: '0', comment: '', fc: '0', fftsize: '1024', freqhalf: 'True', grid: 'False', gui_hint: '', int_max: '10', int_min: '-140', label1: '', label10: '', label2: '', label3: '', label4: '', label5: '', label6: '', label7: '', label8: '', label9: '', legend: 'True', maxoutbuf: '0', minoutbuf: '0', name: '""', nconnections: '1', showports: 'False', type: complex, update_time: '0.10', wintype: window.WIN_BLACKMAN_hARRIS}
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [744, 512.0]
+    rotation: 0
+    state: enabled
+- name: low_pass_filter_0
+  id: low_pass_filter
+  parameters: {affinity: '', alias: '', beta: '6.76', comment: '', cutoff_freq: '3500', decim: '1', gain: '1', interp: '1', maxoutbuf: '0', minoutbuf: '0', samp_rate: samp_rate/decim, type: fir_filter_fff, width: '500', win: window.WIN_HAMMING}
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1264, 272]
+    rotation: 0
+    state: enabled
+- name: blocks_multiply_const_vxx_0
+  id: blocks_multiply_const_vxx
+  parameters: {affinity: '', alias: '', comment: '', const: '0.5', maxoutbuf: '0', minoutbuf: '0', type: float, vlen: '1'}
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1480, 160]
+    rotation: 0
+    state: enabled
+- name: blocks_wavfile_sink_0
+  id: blocks_wavfile_sink
+  parameters: {affinity: '', alias: '', append: 'False', bits_per_sample1: FORMAT_PCM_16, bits_per_sample2: FORMAT_PCM_16, bits_per_sample3: FORMAT_VORBIS, bits_per_sample4: FORMAT_PCM_16, comment: '', file: 'os.path.expanduser("~/Downloads/flag5_audio.wav")', format: FORMAT_WAV, nchan: '1', samp_rate: samp_rate//decim}
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1680, 136]
+    rotation: 0
+    state: enabled
+- name: qtgui_time_sink_x_0
+  id: qtgui_time_sink_x
+  parameters: {affinity: '', alias: '', autoscale: 'True', axislabels: 'True', comment: '', ctrlpanel: 'False', entags: 'True', grid: 'False', gui_hint: '', legend: 'True', name: '"FM audio"', nconnections: '1', size: '4000', srate: samp_rate/decim, stemplot: 'False', tr_chan: '0', tr_delay: '0', tr_level: '0.0', tr_mode: qtgui.TRIG_MODE_FREE, tr_slope: qtgui.TRIG_SLOPE_POS, tr_tag: '""', type: float, update_time: '0.10', ylabel: Amplitude, ymax: '1', ymin: '-1', yunit: '""', alpha1: '1.0', color1: blue, label1: Signal 1, marker1: '-1', style1: '1', width1: '1', alpha2: '1.0', color2: red, label2: Signal 2, marker2: '-1', style2: '1', width2: '1', alpha3: '1.0', color3: green, label3: Signal 3, marker3: '-1', style3: '1', width3: '1', alpha4: '1.0', color4: black, label4: Signal 4, marker4: '-1', style4: '1', width4: '1', alpha5: '1.0', color5: cyan, label5: Signal 5, marker5: '-1', style5: '1', width5: '1', alpha6: '1.0', color6: magenta, label6: Signal 6, marker6: '-1', style6: '1', width6: '1',
+    alpha7: '1.0', color7: yellow, label7: Signal 7, marker7: '-1', style7: '1', width7: '1', alpha8: '1.0', color8: dark red, label8: Signal 8, marker8: '-1', style8: '1', width8: '1', alpha9: '1.0', color9: dark green, label9: Signal 9, marker9: '-1', style9: '1', width9: '1', alpha10: '1.0', color10: dark blue, label10: Signal 10, marker10: '-1', style10: '1', width10: '1'}
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1480, 40]
+    rotation: 0
+    state: enabled
+- name: epy_block_0
+  id: epy_block
+  parameters:
+    _source_code: |
+      import numpy as np
+      from gnuradio import gr
+
+      LOW = [697, 770, 852, 941]           # row tones
+      HIGH = [1209, 1336, 1477, 1633]      # column tones
+      KEYS = [['1', '2', '3', 'A'],
+              ['4', '5', '6', 'B'],
+              ['7', '8', '9', 'C'],
+              ['*', '0', '#', 'D']]
+
+
+      class blk(gr.sync_block):
+          def __init__(self, sample_rate=25000):
+              gr.sync_block.__init__(
+                  self,
+                  name='Touch-tone (DTMF) decoder',
+                  in_sig=[np.float32],   # FM audio
+                  out_sig=None
+              )
+              self.fs = int(sample_rate)
+              self.win = int(0.025 * self.fs)   # look at 25 ms at a time
+              self.hop = int(0.010 * self.fs)   # ...every 10 ms
+              n = np.arange(self.win)
+              hann = np.hanning(self.win)
+              # one "detector" per tone: how much of that exact frequency is present
+              self.probes = {f: hann * np.exp(-2j * np.pi * f * n / self.fs) for f in LOW + HIGH}
+              self.buf = np.zeros(0, dtype=np.float32)
+              self.current = None      # key seen in the last window
+              self.count = 0           # how many windows in a row
+              self.emitted = False
+              self.quiet = 0           # windows since the last key
+              self.digits = ''
+
+          def detect(self, s):
+              s = s - s.mean()
+              total = np.sum(s * s) + 1e-12
+              p = {f: abs(np.dot(s, self.probes[f])) ** 2 for f in LOW + HIGH}
+              lo = sorted(LOW, key=lambda f: p[f], reverse=True)
+              hi = sorted(HIGH, key=lambda f: p[f], reverse=True)
+              # a real key = one clearly strongest low tone AND one clearly strongest high tone
+              if p[lo[0]] < 3 * p[lo[1]] or p[hi[0]] < 3 * p[hi[1]]:
+                  return None
+              # ...and those two tones are a big part of the sound (not just noise)
+              energy = (p[lo[0]] + p[hi[0]]) * 8 / (self.win * self.win)
+              if energy < 0.2 * total / self.win:
+                  return None
+              return KEYS[LOW.index(lo[0])][HIGH.index(hi[0])]
+
+          def work(self, input_items, output_items):
+              self.buf = np.concatenate([self.buf, input_items[0]])
+              while len(self.buf) >= self.win:
+                  key = self.detect(self.buf[:self.win])
+                  self.buf = self.buf[self.hop:]
+                  # Step 1: a key counts once it has been heard 4 windows in a row (~40 ms)
+                  if key is not None and key == self.current:
+                      self.count += 1
+                  else:
+                      self.current, self.count, self.emitted = key, 1, False
+                  if key is not None:
+                      self.quiet = 0
+                      if self.count >= 4 and not self.emitted:
+                          self.digits += key
+                          self.emitted = True
+                  else:
+                      # Step 2: after ~0.5 s with no key, print the whole number
+                      self.quiet += 1
+                      if self.quiet == 50 and self.digits:
+                          print(f"DTMF: {self.digits}", flush=True)
+                          self.digits = ''
+              return len(input_items[0])
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    sample_rate: samp_rate//decim
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1480, 336]
+    rotation: 0
+    state: enabled
+    _io_cache: ('Touch-tone (DTMF) decoder', 'blk', [('sample_rate', '25000')], [('0', 'float', 1)], [], '', ['sample_rate'])
+- name: qtgui_waterfall_sink_x_1
+  id: qtgui_waterfall_sink_x
+  parameters: {affinity: '', alias: '', alpha1: '1.0', alpha10: '1.0', alpha2: '1.0', alpha3: '1.0', alpha4: '1.0', alpha5: '1.0', alpha6: '1.0', alpha7: '1.0', alpha8: '1.0', alpha9: '1.0', axislabels: 'True', bw: samp_rate//decim, color1: '0', color10: '0', color2: '0', color3: '0', color4: '0', color5: '0', color6: '0', color7: '0', color8: '0', color9: '0', comment: '', fc: '0', fftsize: '1024', freqhalf: 'True', grid: 'False', gui_hint: '', int_max: '10', int_min: '-140', label1: '', label10: '', label2: '', label3: '', label4: '', label5: '', label6: '', label7: '', label8: '', label9: '', legend: 'True', maxoutbuf: '0', minoutbuf: '0', name: '""', nconnections: '1', showports: 'False', type: complex, update_time: '0.10', wintype: window.WIN_BLACKMAN_hARRIS}
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1000, 96]
+    rotation: 0
+    state: enabled
+connections:
+- [blocks_file_source_0, '0', blocks_throttle2_0, '0']
+- [blocks_throttle2_0, '0', freq_xlating_fir_filter_xxx_0, '0']
+- [blocks_throttle2_0, '0', qtgui_freq_sink_x_0, '0']
+- [blocks_throttle2_0, '0', qtgui_waterfall_sink_x_0, '0']
+- [freq_xlating_fir_filter_xxx_0, '0', qtgui_waterfall_sink_x_1, '0']
+- [freq_xlating_fir_filter_xxx_0, '0', analog_quadrature_demod_cf_0, '0']
+- [analog_quadrature_demod_cf_0, '0', low_pass_filter_0, '0']
+- [low_pass_filter_0, '0', qtgui_time_sink_x_0, '0']
+- [low_pass_filter_0, '0', blocks_multiply_const_vxx_0, '0']
+- [blocks_multiply_const_vxx_0, '0', blocks_wavfile_sink_0, '0']
+- [low_pass_filter_0, '0', epy_block_0, '0']
+metadata: {file_format: 1, grc_version: 3.10.12.0}

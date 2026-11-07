@@ -167,7 +167,7 @@ class Flag4(gr.top_block, Qt.QWidget):
         self.top_layout.addWidget(self._offset_win)
         self.freq_xlating_fir_filter_xxx_0 = filter.freq_xlating_fir_filter_ccc(decim, firdes.low_pass(1, samp_rate, bw/2, bw/10), 50000, samp_rate)
         self.blocks_wavfile_sink_0 = blocks.wavfile_sink(
-            '/home/grc-gnu/Downloads/New.wav',
+            '/home/andrew/Downloads/newflag.wav',
             1,
             8000,
             blocks.FORMAT_WAV,
@@ -175,7 +175,7 @@ class Flag4(gr.top_block, Qt.QWidget):
             False
             )
         self.blocks_throttle2_0 = blocks.throttle( gr.sizeof_gr_complex*1, samp_rate, True, 0 if "auto" == "auto" else max( int(float(0.1) * samp_rate) if "auto" == "time" else int(0.1), 1) )
-        self.blocks_file_source_0 = blocks.file_source(gr.sizeof_gr_complex*1, '/home/grc-gnu/projects/amr-thesis/data/grcon26/signal-id/Signal_ID_1/sigid.sigmf-data', False, 0, 0)
+        self.blocks_file_source_0 = blocks.file_source(gr.sizeof_gr_complex*1, os.path.join(base, "data/grcon26/signal-id/Signal_ID_1/sigid.sigmf-data"), False, 0, 0)
         self.blocks_file_source_0.set_begin_tag(pmt.PMT_NIL)
         self.analog_quadrature_demod_cf_0 = analog.quadrature_demod_cf(1)
 
@@ -234,6 +234,7 @@ class Flag4(gr.top_block, Qt.QWidget):
 
     def set_base(self, base):
         self.base = base
+        self.blocks_file_source_0.open(os.path.join(self.base, "data/grcon26/signal-id/Signal_ID_1/sigid.sigmf-data"), False)
 
 
 
