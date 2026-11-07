@@ -11,7 +11,7 @@ options:
     gen_linking: dynamic
     generate_options: qt_gui
     hier_block_src_path: '.:'
-    id: NewFlag
+    id: Flag12
     max_nouts: '0'
     output_language: python
     placement: (0,0)
@@ -142,7 +142,7 @@ blocks:
     bus_structure: null
     coordinate: [928, 608.0]
     rotation: 0
-    state: enabled
+    state: disabled
 - name: blocks_file_source_0
   id: blocks_file_source
   parameters:
@@ -150,7 +150,7 @@ blocks:
     alias: ''
     begin_tag: pmt.PMT_NIL
     comment: ''
-    file: /home/grc-gnu/projects/amr-thesis/data/grcon26/signal-id/Signal_ID_1/sigid.sigmf-data
+    file: os.path.join(base, "data/grcon26/signal-id/Signal_ID_1/sigid.sigmf-data")
     length: '0'
     maxoutbuf: '0'
     minoutbuf: '0'
@@ -206,6 +206,125 @@ blocks:
     bus_source: false
     bus_structure: null
     coordinate: [1200, 584.0]
+    rotation: 0
+    state: disabled
+- name: digital_symbol_sync_xx_0
+  id: digital_symbol_sync_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    constellation: digital.constellation_bpsk().base()
+    damping: '1.0'
+    loop_bw: '0.03'
+    max_dev: '1.5'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    nfilters: '128'
+    osps: '1'
+    pfb_mf_taps: '[]'
+    resamp_type: digital.IR_MMSE_8TAP
+    sps: '5'
+    ted_gain: '1.0'
+    ted_type: digital.TED_GARDNER
+    type: ff
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1456, 268.0]
+    rotation: 0
+    state: enabled
+- name: epy_block_0
+  id: epy_block
+  parameters:
+    _source_code: "import numpy as np\nfrom gnuradio import gr\n\n# ---------- M17\
+      \ building blocks ----------\nRAND = [0xD6,0xB5,0xE2,0x30,0x82,0xFF,0x84,0x62,0xBA,0x4E,0x96,0x90,0xD8,0x98,0xDD,0x5D,\n\
+      \        0x0C,0xC8,0x52,0x43,0x91,0x1D,0xF8,0x6E,0x68,0x2F,0x35,0xDA,0x14,0xEA,0xCD,0x76,\n\
+      \        0x19,0x8D,0xD5,0x80,0xD1,0x33,0x87,0x13,0x57,0x18,0x2D,0x29,0x78,0xC3]\n\
+      RAND_BITS = [(RAND[i // 8] >> (7 - i % 8)) & 1 for i in range(368)]   # \"scrambler\"\
+      \ pattern\nSHUFFLE = [(45 * i + 92 * i * i) % 368 for i in range(368)]     \
+      \      # interleaver order\nP1 = [1] + [1, 0, 1, 1] * 15        # which coded\
+      \ bits were kept (setup frame)\nP3 = [1, 1, 1, 1, 1, 1, 1, 0]       # which\
+      \ coded bits were kept (packet frames)\nSYNC_LSF = [int(c) for c in '0101010111110111']\
+      \   # 0x55F7: \"setup frame next\"\nSYNC_PKT = [int(c) for c in '0111010111111111']\
+      \   # 0x75FF: \"packet frame next\"\n\n\ndef unscramble(bits):\n    bits = [b\
+      \ ^ r for b, r in zip(bits, RAND_BITS)]   # undo the scrambler\n    out = [0]\
+      \ * 368\n    for i in range(368):                              # undo the shuffle\n\
+      \        out[SHUFFLE[i]] = bits[i]\n    return out\n\n\ndef fill_gaps(bits,\
+      \ pattern, total):\n    \"\"\"Put back the bits the sender dropped, as 'unknown'\
+      \ (None).\"\"\"\n    out, k, i = [], 0, 0\n    while len(out) < total:\n   \
+      \     if pattern[i % len(pattern)]:\n            out.append(bits[k] if k < len(bits)\
+      \ else None)\n            k += 1\n        else:\n            out.append(None)\n\
+      \        i += 1\n    return out\n\n\ndef viterbi(coded):\n    \"\"\"Undo the\
+      \ error-correcting code: find the input bits that best explain what we got.\"\
+      \"\"\n    def encode(state, b):\n        r = (b << 4) | state\n        g1 =\
+      \ ((r >> 4) ^ (r >> 1) ^ r) & 1\n        g2 = ((r >> 4) ^ (r >> 3) ^ (r >> 2)\
+      \ ^ r) & 1\n        return g1, g2, (r >> 1) & 0xF\n    INF = 10 ** 9\n    cost\
+      \ = [0] + [INF] * 15\n    paths = [[] for _ in range(16)]\n    for t in range(0,\
+      \ len(coded), 2):\n        c1, c2 = coded[t], coded[t + 1]\n        new_cost,\
+      \ new_paths = [INF] * 16, [None] * 16\n        for s in range(16):\n       \
+      \     if cost[s] >= INF:\n                continue\n            for b in (0,\
+      \ 1):\n                g1, g2, ns = encode(s, b)\n                c = cost[s]\
+      \ + (c1 is not None and c1 != g1) + (c2 is not None and c2 != g2)\n        \
+      \        if c < new_cost[ns]:\n                    new_cost[ns], new_paths[ns]\
+      \ = c, paths[s] + [b]\n        cost, paths = new_cost, new_paths\n    best =\
+      \ min(range(16), key=lambda s: cost[s])\n    return paths[best], cost[best]\n\
+      \n\ndef crc16(data):\n    crc = 0xFFFF\n    for byte in data:\n        crc ^=\
+      \ byte << 8\n        for _ in range(8):\n            crc = ((crc << 1) ^ 0x5935)\
+      \ & 0xFFFF if crc & 0x8000 else (crc << 1) & 0xFFFF\n    return crc\n\n\ndef\
+      \ to_bytes(bits):\n    return bytes(int(''.join(map(str, bits[i:i + 8])), 2)\
+      \ for i in range(0, len(bits) - 7, 8))\n\n\n# ---------- the GNU Radio block\
+      \ ----------\nclass blk(gr.sync_block):\n    def __init__(self, threshold=0.40):\n\
+      \        gr.sync_block.__init__(\n            self,\n            name='M17 packet\
+      \ decoder',\n            in_sig=[np.float32],   # one value per symbol, from\
+      \ Symbol Sync\n            out_sig=None\n        )\n        self.threshold =\
+      \ threshold   # between the inner and outer frequency levels\n        self.bits\
+      \ = []               # recent bits, to spot the sync words\n        self.mode\
+      \ = 'hunt'\n        self.frame = []\n        self.packet = b''\n        self.last_printed\
+      \ = None\n\n    def work(self, input_items, output_items):\n        for x in\
+      \ input_items[0]:\n            # Step 1: four frequency levels -> 2 bits each\n\
+      \            if x > self.threshold:\n                pair = (0, 1)        #\
+      \ +3\n            elif x > 0:\n                pair = (0, 0)        # +1\n \
+      \           elif x > -self.threshold:\n                pair = (1, 0)       \
+      \ # -1\n            else:\n                pair = (1, 1)        # -3\n     \
+      \       for b in pair:\n                self.push(b)\n        return len(input_items[0])\n\
+      \n    def push(self, b):\n        if self.mode == 'hunt':\n            # Step\
+      \ 2: look for a sync word\n            self.bits = (self.bits + [b])[-16:]\n\
+      \            if self.bits == SYNC_LSF:\n                self.mode, self.frame,\
+      \ self.packet = 'lsf', [], b''\n            elif self.bits == SYNC_PKT:\n  \
+      \              self.mode, self.frame = 'pkt', []\n            return\n     \
+      \   # Step 3: collect one frame (368 bits)\n        self.frame.append(b)\n \
+      \       if len(self.frame) < 368:\n            return\n        frame, mode =\
+      \ self.frame, self.mode\n        self.mode, self.bits = 'hunt', []\n       \
+      \ if mode == 'lsf':\n            return                   # setup frame: callsigns\
+      \ etc. (not needed for the text)\n        # Step 4: unscramble, un-shuffle,\
+      \ refill dropped bits, undo error correction\n        dec, errors = viterbi(fill_gaps(unscramble(frame),\
+      \ P3, 420))\n        if errors > 20:\n            self.packet = b''\n      \
+      \      return\n        data = to_bytes(dec[:200])               # 25 bytes of\
+      \ the message\n        last = dec[200]                          # 1 = this is\
+      \ the last frame\n        count = int(''.join(map(str, dec[201:206])), 2)\n\
+      \        if not last:\n            self.packet += data\n            return\n\
+      \        self.packet += data[:count]              # last frame: only 'count'\
+      \ bytes are real\n        # Step 5: check the whole message, then print it\n\
+      \        msg, self.packet = self.packet, b''\n        if len(msg) < 3 or crc16(msg[:-2])\
+      \ != int.from_bytes(msg[-2:], 'big'):\n            return\n        text = msg[1:-2].rstrip(b'\\\
+      x00').decode('ascii', errors='replace')   # byte 0 = message type\n        if\
+      \ text != self.last_printed:\n            print(f\"M17 message (type {msg[0]}):\
+      \ {text}\", flush=True)\n            self.last_printed = text"
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    threshold: '0.40'
+  states:
+    _io_cache: ('M17 packet decoder', 'blk', [('threshold', '0.4')], [('0', 'float',
+      1)], [], '', ['threshold'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1848, 280.0]
     rotation: 0
     state: enabled
 - name: freq_xlating_fir_filter_xxx_0
@@ -335,103 +454,6 @@ blocks:
     coordinate: [600, 456.0]
     rotation: 0
     state: enabled
-- name: qtgui_time_sink_x_0
-  id: qtgui_time_sink_x
-  parameters:
-    affinity: ''
-    alias: ''
-    alpha1: '1.0'
-    alpha10: '1.0'
-    alpha2: '1.0'
-    alpha3: '1.0'
-    alpha4: '1.0'
-    alpha5: '1.0'
-    alpha6: '1.0'
-    alpha7: '1.0'
-    alpha8: '1.0'
-    alpha9: '1.0'
-    autoscale: 'True'
-    axislabels: 'True'
-    color1: blue
-    color10: dark blue
-    color2: red
-    color3: green
-    color4: black
-    color5: cyan
-    color6: magenta
-    color7: yellow
-    color8: dark red
-    color9: dark green
-    comment: ''
-    ctrlpanel: 'False'
-    entags: 'True'
-    grid: 'False'
-    gui_hint: ''
-    label1: Signal 1
-    label10: Signal 10
-    label2: Signal 2
-    label3: Signal 3
-    label4: Signal 4
-    label5: Signal 5
-    label6: Signal 6
-    label7: Signal 7
-    label8: Signal 8
-    label9: Signal 9
-    legend: 'True'
-    marker1: '-1'
-    marker10: '-1'
-    marker2: '-1'
-    marker3: '-1'
-    marker4: '-1'
-    marker5: '-1'
-    marker6: '-1'
-    marker7: '-1'
-    marker8: '-1'
-    marker9: '-1'
-    name: '""'
-    nconnections: '1'
-    size: '500'
-    srate: samp_rate/decim
-    stemplot: 'False'
-    style1: '1'
-    style10: '1'
-    style2: '1'
-    style3: '1'
-    style4: '1'
-    style5: '1'
-    style6: '1'
-    style7: '1'
-    style8: '1'
-    style9: '1'
-    tr_chan: '0'
-    tr_delay: '0'
-    tr_level: '0.0'
-    tr_mode: qtgui.TRIG_MODE_FREE
-    tr_slope: qtgui.TRIG_SLOPE_POS
-    tr_tag: '""'
-    type: float
-    update_time: '0.10'
-    width1: '1'
-    width10: '1'
-    width2: '1'
-    width3: '1'
-    width4: '1'
-    width5: '1'
-    width6: '1'
-    width7: '1'
-    width8: '1'
-    width9: '1'
-    ylabel: Amplitude
-    ymax: '1'
-    ymin: '-1'
-    yunit: '""'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1184, 312.0]
-    rotation: 0
-    state: enabled
 - name: qtgui_waterfall_sink_x_0
   id: qtgui_waterfall_sink_x
   parameters:
@@ -554,18 +576,40 @@ blocks:
     coordinate: [848, 184.0]
     rotation: 0
     state: enabled
+- name: rational_resampler_xxx_0
+  id: rational_resampler_xxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    decim: '25'
+    fbw: '0'
+    interp: '24'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    taps: '[]'
+    type: fff
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1200, 304.0]
+    rotation: 0
+    state: enabled
 
 connections:
-- [analog_quadrature_demod_cf_0, '0', qtgui_time_sink_x_0, '0']
+- [analog_quadrature_demod_cf_0, '0', rational_resampler_xxx_0, '0']
 - [blocks_complex_to_float_0, '0', blocks_wavfile_sink_0, '0']
 - [blocks_complex_to_float_0, '1', blocks_wavfile_sink_0, '1']
 - [blocks_file_source_0, '0', blocks_throttle2_0, '0']
 - [blocks_throttle2_0, '0', freq_xlating_fir_filter_xxx_0, '0']
 - [blocks_throttle2_0, '0', qtgui_freq_sink_x_0, '0']
 - [blocks_throttle2_0, '0', qtgui_waterfall_sink_x_0, '0']
+- [digital_symbol_sync_xx_0, '0', epy_block_0, '0']
 - [freq_xlating_fir_filter_xxx_0, '0', analog_quadrature_demod_cf_0, '0']
 - [freq_xlating_fir_filter_xxx_0, '0', blocks_complex_to_float_0, '0']
 - [freq_xlating_fir_filter_xxx_0, '0', qtgui_waterfall_sink_x_1, '0']
+- [rational_resampler_xxx_0, '0', digital_symbol_sync_xx_0, '0']
 
 metadata:
   file_format: 1
